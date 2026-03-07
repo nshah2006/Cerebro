@@ -77,7 +77,7 @@ export function ChessBoard({ game, onMove, currentPlayer }: ChessBoardProps) {
               >
                 {pieceKey && (
                   <img
-                    src={`/pieces/${pieceKey}.svg`}
+                    src={`/public-pieces/${pieceKey}.svg`}
                     alt={pieceKey}
                     className="w-10 h-10 sm:w-12 sm:h-12 select-none pointer-events-none"
                     draggable={false}
