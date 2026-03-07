@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
 # ---------------------------------------------------------------------------
@@ -14,19 +14,34 @@ class HealthResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Users
+# Auth – Phantom wallet challenge / verify
 # ---------------------------------------------------------------------------
-class UserCreate(BaseModel):
-    email: EmailStr
-    username: str = Field(..., min_length=3, max_length=32)
-    password: str = Field(..., min_length=8)
+class ChallengeRequest(BaseModel):
+    wallet_address: str = Field(..., min_length=32, max_length=44)
 
 
-class UserProfile(BaseModel):
-    id: str
-    email: str
+class ChallengeResponse(BaseModel):
+    wallet_address: str
+    challenge: str
+    expires_in: int = 300
+
+
+class VerifyRequest(BaseModel):
+    wallet_address: str = Field(..., min_length=32, max_length=44)
+    signature: str = Field(..., min_length=1)
+
+
+class VerifyResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    wallet_address: str
+    is_new_user: bool
+
+
+class AuthMeResponse(BaseModel):
+    wallet_address: str
     username: str
-    skills: list[str] = []
+    selected_skills: list[str] = []
     created_at: datetime | None = None
 
 
@@ -34,14 +49,22 @@ class UserProfile(BaseModel):
 # Skill selection
 # ---------------------------------------------------------------------------
 class SkillSelectionRequest(BaseModel):
-    user_id: str
-    skills: list[str] = Field(..., min_length=1)
+    wallet_address: str = Field(..., min_length=1)
+    username: str = Field("", max_length=32)
+    selected_skills: list[str] = Field(..., min_length=2, max_length=3)
 
 
 class SkillSelectionResponse(BaseModel):
-    user_id: str
-    skills: list[str]
-    updated: bool = True
+    wallet_address: str
+    selected_skills: list[str]
+    updated: bool
+
+
+class UserSkillsResponse(BaseModel):
+    wallet_address: str
+    username: str
+    selected_skills: list[str]
+    created_at: datetime | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -54,20 +77,24 @@ class QuestionOption(BaseModel):
 
 class QuestionResponse(BaseModel):
     question_id: str
+    topic: str
     question_text: str
     options: list[QuestionOption]
-    difficulty: str | None = None
-    metadata: dict[str, Any] = {}
+    correct_answer: str
+    difficulty: str = "medium"
 
 
 class AnswerSubmitRequest(BaseModel):
-    user_id: str
-    question_id: str
-    selected_option_id: str
+    wallet_address: str = Field(..., min_length=1)
+    skill_topic: str
+    question_text: str
+    selected_answer: str
+    correct_answer: str
+    time_to_answer: float = Field(..., ge=0)
+    game_type: str = "default"
 
 
 class AnswerSubmitResponse(BaseModel):
-    correct: bool
-    correct_option_id: str
+    answered_correctly: bool
     explanation: str = ""
-    score_delta: int = 0
+    points_awarded: int = 0

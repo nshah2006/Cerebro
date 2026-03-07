@@ -35,13 +35,26 @@ async def close_mongo_connection() -> None:
 
 
 # ---------------------------------------------------------------------------
+# JWT
+# ---------------------------------------------------------------------------
+JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-in-production")
+JWT_ALGORITHM: str = "HS256"
+JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
+
+# ---------------------------------------------------------------------------
 # Gemini AI  (placeholder – fill in .env when ready)
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-pro")
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 # ---------------------------------------------------------------------------
 # Solana  (placeholder – fill in .env when ready)
 # ---------------------------------------------------------------------------
 SOLANA_RPC_URL: str = os.getenv("SOLANA_RPC_URL", "https://api.devnet.solana.com")
 SOLANA_PRIVATE_KEY: str = os.getenv("SOLANA_PRIVATE_KEY", "")
+
+# ---------------------------------------------------------------------------
+# Collection names (single source of truth)
+# ---------------------------------------------------------------------------
+USERS_COLLECTION: str = "users"
+EVENTS_COLLECTION: str = "events"
