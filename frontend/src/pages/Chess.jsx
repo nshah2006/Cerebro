@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Peer from "peerjs";
 import QuestionOverlay from "../components/QuestionOverlay";
+import { useTopics } from "../context/TopicsContext";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const SVG_PIECES = {
@@ -191,6 +192,7 @@ function gameStatus(board, turn, enPassant, castleRights) {
 // ── Component ──────────────────────────────────────────────────────────────────
 export default function Chess() {
   const navigate = useNavigate();
+  const { topics } = useTopics();
   const [board, setBoard]         = useState(INIT_BOARD.map(r => [...r]));
   const [turn, setTurn]           = useState("w");
   const [selected, setSelected]   = useState(null);
@@ -616,10 +618,11 @@ export default function Chess() {
       )}
 
       {/* Question Challenge Overlay */}
-      <QuestionOverlay 
-        isOpen={showQuestion} 
-        onAnswer={() => setShowQuestion(false)} 
-        topic="Strategy & Logic"
+      <QuestionOverlay
+        isOpen={showQuestion}
+        onAnswer={() => setShowQuestion(false)}
+        topics={topics}
+        topicLabel={topics.length ? topics.join(", ") : "Strategy & Logic"}
       />
 
       <style dangerouslySetInnerHTML={{__html: `

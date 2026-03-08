@@ -1,10 +1,12 @@
 import { useState } from "react"
 import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
+import { useTopics } from "../context/TopicsContext"
 
 export default function SkillSelect() {
   const { user, logout, isAuthenticated, isLoading } = useAuth0()
   const navigate = useNavigate()
+  const { setTopics } = useTopics()
 
   // State to track selected skills
   const [selectedSkills, setSelectedSkills] = useState([])
@@ -128,7 +130,10 @@ export default function SkillSelect() {
 
         <div className="flex justify-center mt-8">
           <button
-            onClick={() => navigate("/home")}
+            onClick={() => {
+              setTopics(selectedSkills);
+              navigate("/home");
+            }}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-lg text-xl shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             disabled={selectedSkills.length === 0}
           >

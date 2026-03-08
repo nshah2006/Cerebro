@@ -2,9 +2,11 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import Peer from "peerjs"
 import QuestionOverlay from "../components/QuestionOverlay"
+import { useTopics } from "../context/TopicsContext"
 
 export default function TicTacToe() {
   const navigate = useNavigate()
+  const { topics } = useTopics()
   const [board, setBoard] = useState(Array(9).fill(null))
   const [xIsNext, setXIsNext] = useState(true)
   const [showQuestion, setShowQuestion] = useState(false)
@@ -314,10 +316,11 @@ export default function TicTacToe() {
       </div>
 
       {/* Question Challenge Overlay */}
-      <QuestionOverlay 
-        isOpen={showQuestion} 
-        onAnswer={() => setShowQuestion(false)} 
-        topic="Technology"
+      <QuestionOverlay
+        isOpen={showQuestion}
+        onAnswer={() => setShowQuestion(false)}
+        topics={topics}
+        topicLabel={topics.length ? topics.join(", ") : "Technology"}
       />
       
       <style dangerouslySetInnerHTML={{__html: `

@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import Peer from "peerjs"
 import QuestionOverlay from "../components/QuestionOverlay"
+import { useTopics } from "../context/TopicsContext"
 
 const ROWS = 6
 const COLS = 7
 
 export default function Connect4() {
   const navigate = useNavigate()
+  const { topics } = useTopics()
   
   // Create an initial empty board (array of columns)
   const initialBoard = Array.from({ length: COLS }, () => Array(ROWS).fill(null))
@@ -331,10 +333,11 @@ export default function Connect4() {
         </div>
       </div>
 
-      <QuestionOverlay 
-        isOpen={showQuestion} 
-        onAnswer={() => setShowQuestion(false)} 
-        topic="Cognitive Science"
+      <QuestionOverlay
+        isOpen={showQuestion}
+        onAnswer={() => setShowQuestion(false)}
+        topics={topics}
+        topicLabel={topics.length ? topics.join(", ") : "Cognitive Science"}
       />
 
       <style dangerouslySetInnerHTML={{__html: `

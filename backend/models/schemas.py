@@ -71,3 +71,4 @@ class AnswerSubmitResponse(BaseModel):
     correct_option_id: str
     explanation: str = ""
     score_delta: int = 0
+    follow_up_question: QuestionResponse | None = None

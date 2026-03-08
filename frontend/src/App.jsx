@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
+import { TopicsProvider } from "./context/TopicsContext"
 import SignIn from "./pages/SignIn"
 import SkillSelect from "./pages/SkillSelect"
 import Analysis from "./pages/Analysis"
@@ -10,7 +11,8 @@ import Leaderboard from "./pages/Leaderboard"
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <TopicsProvider>
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={<SignIn />} />
         <Route path="/skill-select" element={<SkillSelect />} />
@@ -22,6 +24,7 @@ export default function App() {
         <Route path="/leaderboard" element={<Leaderboard />} />
       </Routes>
     </BrowserRouter>
+    </TopicsProvider>
   )
 }
 

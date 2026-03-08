@@ -1,4 +1,6 @@
+import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncIterator
 
 from fastapi import FastAPI
@@ -13,13 +15,26 @@ from routes.games import router as games_router
 from routes.leaderboard import router as leaderboard_router
 from routes.analysis import router as analysis_router
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    db = get_database()
-    await db.command("ping")
+    try:
+        db = get_database()
+        await db.command("ping")
+        logger.info("MongoDB connection OK")
+    except Exception as e:
+        logger.warning(
+            "MongoDB not available at startup: %s. App will run; DB-dependent routes may fail. "
+            "To run without MongoDB, set MONGODB_URI= in backend/.env",
+            e,
+        )
     yield
-    await close_mongo_connection()
+    try:
+        await close_mongo_connection()
+    except Exception:
+        pass
 
 
 app = FastAPI(
@@ -54,6 +69,22 @@ app.include_router(analysis_router)
 @app.get("/health", response_model=HealthResponse)
 async def health_check() -> HealthResponse:
     return HealthResponse()
+
+
+@app.get("/health/db")
+async def health_db():
+    """Check if MongoDB is reachable. Returns 200 if connected, 503 otherwise."""
+    try:
+        db = get_database()
+        await db.command("ping")
+        return {"status": "ok", "mongodb": "connected"}
+    except Exception as e:
+        logger.warning("MongoDB health check failed: %s", e)
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "mongodb": "disconnected", "detail": str(e)},
+        )
 
 
 if __name__ == "__main__":
