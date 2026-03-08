@@ -11,6 +11,8 @@ export default function TicTacToe() {
   const [xIsNext, setXIsNext] = useState(true)
   const [showQuestion, setShowQuestion] = useState(false)
   const [hasShownQuestionForThisGame, setHasShownQuestionForThisGame] = useState(false)
+  const [winner, setWinner] = useState(null)
+  const [winningLine, setWinningLine] = useState([])
 
   // P2P State
   const [peerId, setPeerId] = useState("")
@@ -42,10 +44,10 @@ export default function TicTacToe() {
       connRef.current = conn
       setStatus("connected")
       setIsHost(asHost)
-      
-      // Reset game when newly connected
       setBoard(Array(9).fill(null))
       setXIsNext(true)
+      setWinner(null)
+      setWinningLine([])
       setHasShownQuestionForThisGame(false)
     })
     
@@ -53,9 +55,15 @@ export default function TicTacToe() {
       if (data.type === 'move') {
         setBoard(data.board)
         setXIsNext(data.xIsNext)
+        // Always derive winner from the received board so host/guest stay in sync (e.g. when O wins, host sees winner "O")
+        const win = calculateWinner(data.board)
+        setWinner(win?.winner ?? null)
+        setWinningLine(win?.line ?? [])
       } else if (data.type === 'restart') {
         setBoard(Array(9).fill(null))
         setXIsNext(true)
+        setWinner(null)
+        setWinningLine([])
         setHasShownQuestionForThisGame(false)
       }
     })
@@ -65,6 +73,8 @@ export default function TicTacToe() {
       connRef.current = null
       setBoard(Array(9).fill(null))
       setXIsNext(true)
+      setWinner(null)
+      setWinningLine([])
       setHasShownQuestionForThisGame(false)
       // Optional: show a small alert or toast
     })
@@ -74,6 +84,8 @@ export default function TicTacToe() {
     setStatus("hosting")
     setBoard(Array(9).fill(null))
     setXIsNext(true)
+    setWinner(null)
+    setWinningLine([])
     setHasShownQuestionForThisGame(false)
   }
 
@@ -105,27 +117,23 @@ export default function TicTacToe() {
     return null
   }
 
-  const winInfo = calculateWinner(board)
-  const winner = winInfo?.winner
-  const winningLine = winInfo?.line || []
   const isDraw = !winner && board.every((square) => square !== null)
 
   useEffect(() => {
     if (winner && !hasShownQuestionForThisGame) {
-      // Determine if I am the loser
+      const inMultiplayer = status === "connected";
       const amILoser = (winner === "X" && !isHost) || (winner === "O" && isHost);
-      
-      if (amILoser) {
+      const shouldShow = !inMultiplayer || amILoser;
+      if (shouldShow) {
         setTimeout(() => {
           setShowQuestion(true);
           setHasShownQuestionForThisGame(true);
         }, 500);
       } else {
-        // Even if I'm not the loser, mark it so we don't check again this game
         setHasShownQuestionForThisGame(true);
       }
     }
-  }, [winner, isHost, hasShownQuestionForThisGame])
+  }, [winner, isHost, hasShownQuestionForThisGame, status])
 
   const handleClick = (i) => {
     if (status === "connected") {
@@ -139,15 +147,26 @@ export default function TicTacToe() {
     setBoard(newBoard)
     const nextTurn = !xIsNext
     setXIsNext(nextTurn)
+    const win = calculateWinner(newBoard)
+    if (win) {
+      setWinner(win.winner)
+      setWinningLine(win.line || [])
+    } else {
+      setWinner(null)
+      setWinningLine([])
+    }
 
     if (status === "connected" && connRef.current) {
-      connRef.current.send({ type: 'move', board: newBoard, xIsNext: nextTurn })
+      const winPayload = win ? { winner: win.winner, winningLine: win.line || [] } : {}
+      connRef.current.send({ type: 'move', board: newBoard, xIsNext: nextTurn, ...winPayload })
     }
   }
 
   const resetGame = () => {
     setBoard(Array(9).fill(null))
     setXIsNext(true)
+    setWinner(null)
+    setWinningLine([])
     if (status === "connected" && connRef.current) {
       connRef.current.send({ type: 'restart' })
     }

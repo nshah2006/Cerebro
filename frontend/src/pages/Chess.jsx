@@ -26,19 +26,19 @@ const TEXT_PIECES = {
 };
 
 const INIT_BOARD = [
-  ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-  ["bP","bP","bP","bP","bP","bP","bP","bP"],
-  [null,null,null,null,null,null,null,null],
-  [null,null,null,null,null,null,null,null],
-  [null,null,null,null,null,null,null,null],
-  [null,null,null,null,null,null,null,null],
-  ["wP","wP","wP","wP","wP","wP","wP","wP"],
-  ["wR","wN","wB","wQ","wK","wB","wN","wR"],
+  ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"],
+  ["bP", "bP", "bP", "bP", "bP", "bP", "bP", "bP"],
+  [null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null, null],
+  ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
+  ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
 ];
 
 const color = (p) => p ? p[0] : null;
-const type  = (p) => p ? p[1] : null;
-const opp   = (c) => c === "w" ? "b" : "w";
+const type = (p) => p ? p[1] : null;
+const opp = (c) => c === "w" ? "b" : "w";
 const inBounds = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
 const clone = (b) => b.map(r => [...r]);
 
@@ -47,7 +47,7 @@ function rawMoves(board, r, c, enPassant, castleRights) {
   const piece = board[r][c];
   if (!piece) return [];
   const col = color(piece);
-  const t   = type(piece);
+  const t = type(piece);
   const moves = [];
   const push = (tr, tc) => { if (inBounds(tr, tc)) moves.push([tr, tc]); };
   const slide = (dr, dc) => {
@@ -79,15 +79,15 @@ function rawMoves(board, r, c, enPassant, castleRights) {
     }
   }
   if (t === "N") {
-    for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+    for (const [dr, dc] of [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]]) {
       const nr = r + dr, nc = c + dc;
       if (inBounds(nr, nc) && color(board[nr][nc]) !== col) push(nr, nc);
     }
   }
-  if (t === "B" || t === "Q") { slide(-1,-1); slide(-1,1); slide(1,-1); slide(1,1); }
-  if (t === "R" || t === "Q") { slide(-1,0); slide(1,0); slide(0,-1); slide(0,1); }
+  if (t === "B" || t === "Q") { slide(-1, -1); slide(-1, 1); slide(1, -1); slide(1, 1); }
+  if (t === "R" || t === "Q") { slide(-1, 0); slide(1, 0); slide(0, -1); slide(0, 1); }
   if (t === "K") {
-    for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) {
+    for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) {
       const nr = r + dr, nc = c + dc;
       if (inBounds(nr, nc) && color(board[nr][nc]) !== col) push(nr, nc);
     }
@@ -154,7 +154,7 @@ function legalMoves(board, r, c, enPassant, castleRights) {
     if (type(board[r][c]) === "K" && Math.abs(tc - c) === 2) {
       const mid = c + (tc > c ? 1 : -1);
       if (isAttacked(board, r, mid, opp(col))) return false;
-      if (isAttacked(board, r, c,   opp(col))) return false;
+      if (isAttacked(board, r, c, opp(col))) return false;
     }
     const kingTarget = findKing(nb, col);
     if (!kingTarget) return false;
@@ -193,24 +193,25 @@ function gameStatus(board, turn, enPassant, castleRights) {
 export default function Chess() {
   const navigate = useNavigate();
   const { topics } = useTopics();
-  const [board, setBoard]         = useState(INIT_BOARD.map(r => [...r]));
-  const [turn, setTurn]           = useState("w");
-  const [selected, setSelected]   = useState(null);
+  const [board, setBoard] = useState(INIT_BOARD.map(r => [...r]));
+  const [turn, setTurn] = useState("w");
+  const [selected, setSelected] = useState(null);
   const [highlights, setHighlights] = useState([]);
   const [enPassant, setEnPassant] = useState(null);
   const [castleRights, setCastle] = useState({ wK: true, wQ: true, bK: true, bQ: true });
-  const [status, setStatus]       = useState("playing");
-  const [lastMove, setLastMove]   = useState(null);
+  const [status, setStatus] = useState("playing");
+  const [lastMove, setLastMove] = useState(null);
   const [promoState, setPromoState] = useState(null); // { board, to, turn, ep, castle }
   const [capturedW, setCapturedW] = useState([]);
   const [capturedB, setCapturedB] = useState([]);
-  const [moveLog, setMoveLog]     = useState([]);
+  const [moveLog, setMoveLog] = useState([]);
   const [showQuestion, setShowQuestion] = useState(false);
+  const [hasShownQuestionForThisGame, setHasShownQuestionForThisGame] = useState(false);
 
   // P2P State (matching TicTacToe)
   const [peerId, setPeerId] = useState("");
   const [joinId, setJoinId] = useState("");
-  const [p2pStatus, setP2pStatus] = useState("local"); 
+  const [p2pStatus, setP2pStatus] = useState("local");
   const [isHost, setIsHost] = useState(true);
   const [copied, setCopied] = useState(false);
   const peerRef = useRef(null);
@@ -256,7 +257,7 @@ export default function Chess() {
     const newStatus = gameStatus(nb, newTurn, newEP, newCastle);
     const newCapturedW = captured && color(captured) === "w" ? [...capturedW, captured] : capturedW;
     const newCapturedB = captured && color(captured) === "b" ? [...capturedB, captured] : capturedB;
-    
+
     setBoard(nb);
     setTurn(newTurn);
     setEnPassant(newEP);
@@ -269,13 +270,7 @@ export default function Chess() {
     setCapturedB(newCapturedB);
 
     if (captured) {
-      // Only show the question to the player who LOST the piece
-      const lostPieceColor = color(captured);
-      const amITheVictim = (lostPieceColor === 'w' && isHost) || (lostPieceColor === 'b' && !isHost);
-      
-      if (amITheVictim) {
-        setTimeout(() => setShowQuestion(true), 500);
-      }
+      // Track captured pieces for display only
     }
 
     if (p2pStatus === "connected" && connRef.current) {
@@ -295,9 +290,9 @@ export default function Chess() {
   }, [capturedW, capturedB, p2pStatus, moveLog]);
 
   const doMove = useCallback((from, to, boardState, ep, castle) => {
-    const piece  = boardState[from[0]][from[1]];
-    const t      = type(piece);
-    const c      = color(piece);
+    const piece = boardState[from[0]][from[1]];
+    const t = type(piece);
+    const c = color(piece);
     const captured = boardState[to[0]][to[1]];
 
     let nb = applyMove(boardState, from, to, ep);
@@ -320,7 +315,7 @@ export default function Chess() {
       return;
     }
 
-    const colFiles = ["a","b","c","d","e","f","g","h"];
+    const colFiles = ["a", "b", "c", "d", "e", "f", "g", "h"];
     const moveStr = `${TEXT_PIECES[piece]}${colFiles[from[1]]}${8 - from[0]}→${colFiles[to[1]]}${8 - to[0]}`;
     setMoveLog(log => [...log, { str: moveStr, col: c }]);
 
@@ -340,7 +335,7 @@ export default function Chess() {
 
   const handleClick = useCallback((r, c) => {
     if (status === "checkmate" || status === "stalemate" || promoState) return;
-    
+
     // P2P Turn Check
     if (p2pStatus === "connected") {
       const myTurn = (isHost && turn === "w") || (!isHost && turn === "b");
@@ -374,32 +369,50 @@ export default function Chess() {
     setEnPassant(null); setCastle({ wK: true, wQ: true, bK: true, bQ: true });
     setStatus("playing"); setLastMove(null); setPromoState(null);
     setCapturedW([]); setCapturedB([]); setMoveLog([]);
+    setHasShownQuestionForThisGame(false);
     if (p2pStatus === "connected" && connRef.current && isHost) {
-      connRef.current.send({ type: 'restart' });
+      connRef.current.send({ type: "restart" });
     }
   };
 
   const isHighlighted = (r, c) => highlights.some(([hr, hc]) => hr === r && hc === c);
-  const isSelected    = (r, c) => selected && selected[0] === r && selected[1] === c;
-  const isLastMove    = (r, c) => lastMove && (
+  const isSelected = (r, c) => selected && selected[0] === r && selected[1] === c;
+  const isLastMove = (r, c) => lastMove && (
     (lastMove.from[0] === r && lastMove.from[1] === c) ||
-    (lastMove.to[0]   === r && lastMove.to[1]   === c)
+    (lastMove.to[0] === r && lastMove.to[1] === c)
   );
   const kingPos = (status === "check" || status === "checkmate") ? findKing(board, turn) : null;
 
+  // Show question only to the player who lost (checkmated). In local play, show every time.
+  useEffect(() => {
+    if (status === "checkmate" && !hasShownQuestionForThisGame) {
+      const inMultiplayer = p2pStatus === "connected";
+      const amILoser = (turn === "w" && isHost) || (turn === "b" && !isHost);
+      const shouldShow = !inMultiplayer || amILoser;
+      if (shouldShow) {
+        setTimeout(() => {
+          setShowQuestion(true);
+          setHasShownQuestionForThisGame(true);
+        }, 500);
+      } else {
+        setHasShownQuestionForThisGame(true);
+      }
+    }
+  }, [status, turn, isHost, hasShownQuestionForThisGame, p2pStatus]);
+
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center p-4 font-sans relative overflow-hidden">
-      
+
       {/* Background blobs (themed) */}
       <div className="absolute top-10 left-10 w-72 h-72 bg-[#8B9D8B] rounded-full filter blur-3xl opacity-20 animate-blob"></div>
       <div className="absolute top-0 right-20 w-72 h-72 bg-yellow-200 rounded-full filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
       <div className="absolute -bottom-8 left-40 w-72 h-72 bg-emerald-200 rounded-full filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
 
       <div className="relative z-10 w-full max-w-5xl bg-white/80 backdrop-blur-xl p-6 md:p-8 rounded-[2rem] shadow-2xl border border-white/50 flex flex-col items-center">
-        
+
         {/* Header */}
         <div className="w-full flex justify-between items-center mb-6">
-          <button 
+          <button
             onClick={() => navigate('/home')}
             className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors"
           >
@@ -420,26 +433,26 @@ export default function Chess() {
           <div className="w-full mb-6 p-4 bg-white/60 rounded-2xl border border-[#8B9D8B]/30 flex flex-col gap-3 shadow-sm max-w-md">
             <p className="text-xs font-bold text-gray-400 text-center uppercase tracking-widest">Multiplayer</p>
             <div className="flex flex-col sm:flex-row gap-2">
-              <button 
-                onClick={() => setP2pStatus("hosting")} 
+              <button
+                onClick={() => setP2pStatus("hosting")}
                 className="flex-1 py-2.5 bg-[#8B9D8B]/10 hover:bg-[#8B9D8B]/20 border border-[#8B9D8B]/30 text-[#4A5D4A] font-bold rounded-xl transition-all shadow-sm active:scale-95"
               >
                 Host Game
               </button>
               <div className="flex flex-1 gap-1">
-                <input 
-                  type="text" 
-                  placeholder="Paste Code" 
+                <input
+                  type="text"
+                  placeholder="Paste Code"
                   value={joinId}
                   onChange={(e) => setJoinId(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8B9D8B] font-mono text-xs shadow-inner"
                 />
-                <button 
+                <button
                   onClick={() => {
                     if (!joinId) return;
                     const conn = peerRef.current.connect(joinId);
                     setupConnection(conn, false);
-                  }} 
+                  }}
                   className="py-2.5 px-4 bg-gray-800 hover:bg-black text-white font-bold rounded-xl transition-all shadow-sm active:scale-95"
                 >
                   Join
@@ -458,12 +471,12 @@ export default function Chess() {
                 <div className="px-3 py-2 w-full font-mono font-black text-gray-700 text-center truncate select-all overflow-x-auto whitespace-nowrap scrollbar-hide">
                   {peerId || "Generating..."}
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     navigator.clipboard.writeText(peerId);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
-                  }} 
+                  }}
                   className="p-3 bg-gray-50 border-l border-gray-100 hover:bg-[#8B9D8B]/10 text-[#4A5D4A] transition-colors"
                 >
                   {copied ? "✓" : "❐"}
@@ -487,18 +500,18 @@ export default function Chess() {
         )}
 
         <div className="flex flex-col lg:flex-row gap-8 w-full items-start justify-center">
-          
+
           {/* Left Panel - Status & Captured */}
           <div className="w-full lg:w-48 flex flex-col gap-4 order-2 lg:order-1">
             <div className="bg-[#8B9D8B]/5 border border-[#8B9D8B]/20 p-4 rounded-2xl shadow-sm">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
               <p className={`text-lg font-black ${status === 'checkmate' ? 'text-red-500' : 'text-[#2C3E2C]'}`}>
                 {status === "checkmate" ? `${opp(turn).toUpperCase()} WINS!` :
-                 status === "stalemate" ? "DRAW" :
-                 status === "check"     ? "CHECK!" :
-                 p2pStatus === "connected" ? 
-                    ((isHost && turn === 'w') || (!isHost && turn === 'b') ? "Your Turn" : "Opponent's Turn") :
-                    `${turn === "w" ? "White" : "Black"}'s turn`}
+                  status === "stalemate" ? "DRAW" :
+                    status === "check" ? "CHECK!" :
+                      p2pStatus === "connected" ?
+                        ((isHost && turn === 'w') || (!isHost && turn === 'b') ? "Your Turn" : "Opponent's Turn") :
+                        `${turn === "w" ? "White" : "Black"}'s turn`}
               </p>
             </div>
 
@@ -522,10 +535,10 @@ export default function Chess() {
             <div className="relative group">
               {/* File Labels (Left) */}
               <div className="absolute -left-6 top-0 bottom-0 flex flex-col justify-around py-4 text-[10px] font-bold text-gray-400">
-                {[8,7,6,5,4,3,2,1].map(n => <span key={n}>{n}</span>)}
+                {[8, 7, 6, 5, 4, 3, 2, 1].map(n => <span key={n}>{n}</span>)}
               </div>
-              
-              <div 
+
+              <div
                 className="grid grid-cols-8 grid-rows-8 border-4 border-[#2C3E2C]/10 rounded-lg overflow-hidden shadow-2xl"
                 style={{ width: 'min(80vw, 500px)', height: 'min(80vw, 500px)' }}
               >
@@ -542,7 +555,7 @@ export default function Chess() {
                   if (inKingCheck) bg = "#FEE2E2";
 
                   return (
-                    <div 
+                    <div
                       key={`${r}-${c}`}
                       onClick={() => handleClick(r, c)}
                       className="relative flex items-center justify-center cursor-pointer transition-colors duration-100 overflow-hidden"
@@ -552,7 +565,7 @@ export default function Chess() {
                       {hi && !piece && (
                         <div className="w-1/4 h-1/4 bg-black/10 rounded-full"></div>
                       )}
-                      
+
                       {/* Highlight Ring for Capture */}
                       {hi && piece && (
                         <div className="absolute inset-2 border-4 border-black/10 rounded-full"></div>
@@ -560,8 +573,8 @@ export default function Chess() {
 
                       {/* Piece Icon */}
                       {piece && (
-                        <img 
-                          src={SVG_PIECES[piece]} 
+                        <img
+                          src={SVG_PIECES[piece]}
                           alt=""
                           className={`
                             w-4/5 h-4/5 object-contain select-none z-10 
@@ -576,7 +589,7 @@ export default function Chess() {
 
               {/* Rank Labels (Bottom) */}
               <div className="flex justify-around mt-2 px-2 text-[10px] font-bold text-gray-400 w-full uppercase tracking-widest">
-                {["a","b","c","d","e","f","g","h"].map(f => <span key={f}>{f}</span>)}
+                {["a", "b", "c", "d", "e", "f", "g", "h"].map(f => <span key={f}>{f}</span>)}
               </div>
             </div>
           </div>
@@ -604,7 +617,7 @@ export default function Chess() {
           <div className="bg-white p-8 rounded-[2rem] shadow-2xl border border-white/50 text-center max-w-xs w-full">
             <h2 className="text-xl font-black text-[#2C3E2C] mb-6">Promote Pawn</h2>
             <div style={{ display: "flex", gap: "16px" }}>
-              {["Q","R","B","N"].map(p => {
+              {["Q", "R", "B", "N"].map(p => {
                 const col = promoState.turn === "w" ? "b" : "w";
                 return (
                   <button key={p} onClick={() => handlePromo(p)} className="h-20 w-20 bg-gray-50 hover:bg-[#8B9D8B]/10 rounded-2xl flex items-center justify-center p-2 border-2 border-transparent hover:border-[#8B9D8B] transition-all">
@@ -625,7 +638,8 @@ export default function Chess() {
         topicLabel={topics.length ? topics.join(", ") : "Strategy & Logic"}
       />
 
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes blob {
           0% { transform: translate(0px, 0px) scale(1); }
           33% { transform: translate(30px, -50px) scale(1.1); }

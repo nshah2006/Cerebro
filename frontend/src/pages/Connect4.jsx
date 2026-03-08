@@ -99,20 +99,19 @@ export default function Connect4() {
 
   useEffect(() => {
     if (winner && !hasShownQuestionForThisGame) {
-      // Determine if I am the loser
+      const inMultiplayer = status === "connected";
       const amILoser = (winner === "Red" && !isHost) || (winner === "Yellow" && isHost);
-      
-      if (amILoser) {
+      const shouldShow = !inMultiplayer || amILoser;
+      if (shouldShow) {
         setTimeout(() => {
           setShowQuestion(true);
           setHasShownQuestionForThisGame(true);
         }, 500);
       } else {
-        // Even if I'm not the loser, mark it so we don't check again this game
         setHasShownQuestionForThisGame(true);
       }
     }
-  }, [winner, isHost, hasShownQuestionForThisGame])
+  }, [winner, isHost, hasShownQuestionForThisGame, status])
 
   const dropDisc = (colIndex) => {
     if (winner) return

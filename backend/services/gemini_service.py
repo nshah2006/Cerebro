@@ -19,13 +19,23 @@ logger = logging.getLogger(__name__)
 
 MAIN_QUESTION_SYSTEM = """You are a quiz generator for a game-based learning app. Generate exactly one multiple-choice question.
 Output ONLY valid JSON with this exact structure (no markdown, no code fence):
-{"question_text": "...", "options": [{"id": "a", "text": "..."}, {"id": "b", "text": "..."}, {"id": "c", "text": "..."}, {"id": "d", "text": "..."}], "correct_id": "a", "difficulty": "medium"}
-Rules: Use exactly 4 options. correct_id must be one of "a","b","c","d". difficulty is "easy", "medium", or "hard". Keep question_text and option text concise and clear."""
+{"question_text": "...", "options": [{"id": "a", "text": "..."}, {"id": "b", "text": "..."}, {"id": "c", "text": "..."}, {"id": "d", "text": "..."}], "correct_id": "a", "difficulty": "medium", "explanation": "1-2 sentence explanation of why the correct answer is correct."}
+Rules: Use exactly 4 options. correct_id must be one of "a","b","c","d". difficulty is "easy", "medium", or "hard". explanation must clearly explain WHY the correct answer is right. Keep question_text and option text concise and clear. Do NOT repeat or rephrase any question that appears in the "Do not repeat" list below."""
+
+ADAPTIVE_QUESTION_SYSTEM = """You are a quiz generator for a game-based learning app. You adapt to the user's learning history.
+Output ONLY valid JSON with this exact structure (no markdown, no code fence):
+{"question_text": "...", "options": [{"id": "a", "text": "..."}, {"id": "b", "text": "..."}, {"id": "c", "text": "..."}, {"id": "d", "text": "..."}], "correct_id": "a", "difficulty": "easy|medium|hard", "explanation": "1-2 sentence explanation of why the correct answer is correct."}
+Rules:
+- Use exactly 4 options. correct_id must be one of "a","b","c","d".
+- Match the requested difficulty (easier after wrong answers, harder after correct ones).
+- Do NOT repeat or rephrase any question listed in "Do not repeat these questions" — generate a new, different question.
+- Use the user's learning history to pick topics they need more practice on, or to avoid over-testing what they already know.
+- Keep question_text and option text concise."""
 
 FOLLOW_UP_SYSTEM = """You are a quiz generator. The user just answered the previous question incorrectly. Generate a SIMPLER follow-up question on the same topic to help them learn.
 Output ONLY valid JSON with this exact structure (no markdown, no code fence):
-{"question_text": "...", "options": [{"id": "a", "text": "..."}, {"id": "b", "text": "..."}, {"id": "c", "text": "..."}, {"id": "d", "text": "..."}], "correct_id": "a", "difficulty": "easy"}
-Rules: Use exactly 4 options. correct_id must be one of "a","b","c","d". difficulty must be "easy". Keep the question and options short."""
+{"question_text": "...", "options": [{"id": "a", "text": "..."}, {"id": "b", "text": "..."}, {"id": "c", "text": "..."}, {"id": "d", "text": "..."}], "correct_id": "a", "difficulty": "easy", "explanation": "1-2 sentence explanation of why the correct answer is correct."}
+Rules: Use exactly 4 options. correct_id must be one of "a","b","c","d". difficulty must be "easy". explanation must clearly explain WHY the correct answer is right. Keep the question and options short."""
 
 
 def _build_topics_prompt(topics: list[str]) -> str:
@@ -109,6 +119,44 @@ def generate_question(topics: list[str], difficulty: str = "medium") -> dict[str
         "options": [{"id": str(o.get("id", chr(97 + i))).lower()[:1], "text": str(o.get("text", ""))} for i, o in enumerate(options[:4])],
         "correct_id": correct_id,
         "difficulty": data.get("difficulty") or difficulty,
+        "explanation": data.get("explanation") or "",
+    }
+
+
+def generate_question_adaptive(
+    topics: list[str],
+    difficulty: str,
+    history_summary: str,
+    exclude_questions: list[str],
+) -> dict[str, Any] | None:
+    """
+    Generate one MCQ adapted to user's learning history: no repeats, difficulty from history.
+    """
+    prompt = _build_topics_prompt(topics)
+    prompt += f"\nRequested difficulty (based on their last answer): {difficulty}."
+    prompt += f"\n\nUser learning context:\n{history_summary}"
+    if exclude_questions:
+        prompt += "\n\nDo not repeat these questions (generate something different):\n"
+        for q in exclude_questions[:20]:
+            if q:
+                prompt += f"- {q[:120]}\n"
+    prompt += "\nGenerate one new question."
+    text = _call_gemini(prompt, ADAPTIVE_QUESTION_SYSTEM)
+    if not text:
+        return None
+    data = _parse_json_from_text(text)
+    if not data:
+        return None
+    options = data.get("options") or []
+    correct_id = (data.get("correct_id") or "a").lower()
+    if correct_id not in ("a", "b", "c", "d"):
+        correct_id = "a"
+    return {
+        "question_text": data.get("question_text") or "No question generated.",
+        "options": [{"id": str(o.get("id", chr(97 + i))).lower()[:1], "text": str(o.get("text", ""))} for i, o in enumerate(options[:4])],
+        "correct_id": correct_id,
+        "difficulty": data.get("difficulty") or difficulty,
+        "explanation": data.get("explanation") or "",
     }
 
 
@@ -132,4 +180,5 @@ def generate_follow_up_question(topics: list[str], previous_question: str) -> di
         "options": [{"id": str(o.get("id", chr(97 + i))).lower()[:1], "text": str(o.get("text", ""))} for i, o in enumerate(options[:4])],
         "correct_id": correct_id,
         "difficulty": "easy",
+        "explanation": data.get("explanation") or "",
     }
