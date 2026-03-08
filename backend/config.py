@@ -11,7 +11,7 @@ load_dotenv()
 # MongoDB
 # ---------------------------------------------------------------------------
 MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "hackai")
+MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "Cerebro")
 
 _motor_client: AsyncIOMotorClient | None = None
 
@@ -19,7 +19,8 @@ _motor_client: AsyncIOMotorClient | None = None
 def get_motor_client() -> AsyncIOMotorClient:
     global _motor_client
     if _motor_client is None:
-        _motor_client = AsyncIOMotorClient(MONGODB_URI)
+        import certifi
+        _motor_client = AsyncIOMotorClient(MONGODB_URI, tlsCAFile=certifi.where())
     return _motor_client
 
 
