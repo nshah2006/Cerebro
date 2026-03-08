@@ -14,3 +14,5 @@ scikit-learn>=1.4
 numpy>=1.26
 solana>=0.34
 solders>=0.21
+certifi>=2024.0
+dnspython>=2.4
