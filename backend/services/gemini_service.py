@@ -9,6 +9,8 @@ import logging
 import re
 from typing import Any
 
+from google import genai
+
 from config import GEMINI_API_KEY, GEMINI_MODEL
 
 logger = logging.getLogger(__name__)

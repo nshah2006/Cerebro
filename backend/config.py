@@ -14,7 +14,7 @@ load_dotenv(_backend_dir / ".env", override=True)
 # MongoDB
 # ---------------------------------------------------------------------------
 MONGODB_URI: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "hackai")
+MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "Cerebro")
 
 _motor_client: AsyncIOMotorClient | None = None
 
@@ -47,13 +47,28 @@ async def close_mongo_connection() -> None:
 
 
 # ---------------------------------------------------------------------------
+# JWT
+# ---------------------------------------------------------------------------
+JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-secret-change-in-production")
+JWT_ALGORITHM: str = "HS256"
+JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
+
+# ---------------------------------------------------------------------------
 # Gemini AI  (placeholder – fill in .env when ready)
 # ---------------------------------------------------------------------------
 GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-pro")
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 # ---------------------------------------------------------------------------
-# Solana  (placeholder – fill in .env when ready)
+# Solana  (fill in .env for live devnet rewards)
 # ---------------------------------------------------------------------------
 SOLANA_RPC_URL: str = os.getenv("SOLANA_RPC_URL", "https://api.devnet.solana.com")
 SOLANA_PRIVATE_KEY: str = os.getenv("SOLANA_PRIVATE_KEY", "")
+SOLANA_MINT_ADDRESS: str = os.getenv("SOLANA_MINT_ADDRESS", "")
+SOLANA_REWARDS_ENABLED: bool = os.getenv("SOLANA_REWARDS_ENABLED", "false").lower() == "true"
+
+# ---------------------------------------------------------------------------
+# Collection names (single source of truth)
+# ---------------------------------------------------------------------------
+USERS_COLLECTION: str = "users"
+EVENTS_COLLECTION: str = "events"

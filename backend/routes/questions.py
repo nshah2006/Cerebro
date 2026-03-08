@@ -3,6 +3,13 @@ from __future__ import annotations
 import random
 import uuid
 from fastapi import APIRouter, HTTPException, Query
+import hashlib
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException, Query
+from pymongo.errors import PyMongoError
+
+from config import EVENTS_COLLECTION, get_database
 from models.schemas import (
     AnswerSubmitRequest,
     AnswerSubmitResponse,
@@ -58,6 +65,10 @@ _FALLBACKS = [
         "correct_id": "b",
     },
 ]
+
+
+def _make_question_id(topic: str, text: str) -> str:
+    return hashlib.sha256(f"{topic}:{text}".encode()).hexdigest()[:16]
 
 
 @router.get("/next", response_model=QuestionResponse)

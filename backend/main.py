@@ -49,8 +49,12 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -64,6 +68,25 @@ app.include_router(questions_router)
 app.include_router(games_router)
 app.include_router(leaderboard_router)
 app.include_router(analysis_router)
+
+
+@app.get("/")
+async def root() -> dict:
+    """Root endpoint: API info and links."""
+    return {
+        "name": "HackAI Backend",
+        "version": "0.1.0",
+        "docs": "/docs",
+        "health": "/health",
+        "endpoints": {
+            "auth": "/auth/challenge, /auth/verify, /auth/me",
+            "skills": "/skills/",
+            "questions": "/questions/next, /questions/submit",
+            "games": "/games/event, /games/result",
+            "leaderboard": "/leaderboard/",
+            "analysis": "/analysis/init, /analysis/status",
+        },
+    }
 
 
 @app.get("/health", response_model=HealthResponse)
