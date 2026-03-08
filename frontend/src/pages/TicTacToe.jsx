@@ -55,8 +55,13 @@ export default function TicTacToe() {
       if (data.type === 'move') {
         setBoard(data.board)
         setXIsNext(data.xIsNext)
-        // Always derive winner from the received board so host/guest stay in sync (e.g. when O wins, host sees winner "O")
-        const win = calculateWinner(data.board)
+        // Use winner from payload when sender included it (reliable); else derive from board so host gets question when O wins
+        const payloadWinner = data.winner === "X" || data.winner === "O" ? data.winner : null
+        const payloadLine = Array.isArray(data.winningLine) ? data.winningLine : []
+        const winFromBoard = Array.isArray(data.board) && data.board.length === 9 ? calculateWinner(data.board) : null
+        const win = payloadWinner != null
+          ? { winner: payloadWinner, line: payloadLine }
+          : winFromBoard
         setWinner(win?.winner ?? null)
         setWinningLine(win?.line ?? [])
       } else if (data.type === 'restart') {
@@ -121,16 +126,22 @@ export default function TicTacToe() {
 
   useEffect(() => {
     if (winner && !hasShownQuestionForThisGame) {
-      const inMultiplayer = status === "connected";
-      const amILoser = (winner === "X" && !isHost) || (winner === "O" && isHost);
-      const shouldShow = !inMultiplayer || amILoser;
+      const inMultiplayer = status === "connected"
+      // Loser gets the question: X won → O lost (guest); O won → X lost (host)
+      const iPlayX = isHost
+      const iPlayO = !isHost
+      const xWon = winner === "X"
+      const oWon = winner === "O"
+      const iLost = (xWon && iPlayO) || (oWon && iPlayX)
+      const shouldShow = !inMultiplayer || iLost
+
       if (shouldShow) {
         setTimeout(() => {
-          setShowQuestion(true);
-          setHasShownQuestionForThisGame(true);
-        }, 500);
+          setShowQuestion(true)
+          setHasShownQuestionForThisGame(true)
+        }, 500)
       } else {
-        setHasShownQuestionForThisGame(true);
+        setHasShownQuestionForThisGame(true)
       }
     }
   }, [winner, isHost, hasShownQuestionForThisGame, status])

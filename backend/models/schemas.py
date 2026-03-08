@@ -58,6 +58,7 @@ class QuestionResponse(BaseModel):
     options: list[QuestionOption]
     difficulty: str | None = None
     metadata: dict[str, Any] = {}
+    correct_option_id: str = ""  # so frontend can show right answer instantly on click
 
 
 class AnswerSubmitRequest(BaseModel):

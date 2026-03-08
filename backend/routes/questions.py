@@ -95,6 +95,7 @@ async def next_question(
             question_text=fb["question_text"],
             options=[QuestionOption(id=o[0], text=o[1]) for o in fb["options"]],
             difficulty="medium",
+            correct_option_id=fb["correct_id"],
         )
     question_id = f"q-{uuid.uuid4().hex[:12]}"
     _question_store[question_id] = {
@@ -110,6 +111,7 @@ async def next_question(
         question_text=data["question_text"],
         options=[QuestionOption(id=o["id"], text=o["text"]) for o in data["options"]],
         difficulty=data.get("difficulty") or next_difficulty,
+        correct_option_id=data["correct_id"],
     )
 
 
@@ -155,6 +157,7 @@ async def submit_answer(body: AnswerSubmitRequest) -> AnswerSubmitResponse:
                 question_text=fu["question_text"],
                 options=[QuestionOption(id=o["id"], text=o["text"]) for o in fu["options"]],
                 difficulty="easy",
+                correct_option_id=fu["correct_id"],
             )
     return AnswerSubmitResponse(
         correct=correct,
