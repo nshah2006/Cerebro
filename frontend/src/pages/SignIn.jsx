@@ -1,7 +1,7 @@
 import { useAuth0 } from "@auth0/auth0-react"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import { supabase } from "../lib/supabase"
 import { useUser } from "../context/UserContext"
 
 export default function SignIn() {
@@ -14,10 +14,35 @@ export default function SignIn() {
 
     const syncUser = async () => {
       try {
-        const res = await axios.post("http://localhost:8000/auth/users/login", {
-          email: user.email,
-        })
-        const userData = res.data.user
+        // Check if user exists in Supabase
+        const { data: existingUser, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', user.email)
+          .single()
+
+        let userData
+
+        if (fetchError && fetchError.code === 'PGRST116') {
+          // User doesn't exist, create new user
+          const { data: newUser, error: insertError } = await supabase
+            .from('users')
+            .insert({
+              email: user.email,
+              auth0_id: user.sub,
+              selected_skills: []
+            })
+            .select()
+            .single()
+
+          if (insertError) throw insertError
+          userData = newUser
+        } else if (fetchError) {
+          throw fetchError
+        } else {
+          userData = existingUser
+        }
+
         setCurrentUser(userData)
 
         if (!userData.selected_skills || userData.selected_skills.length === 0) {
@@ -26,7 +51,7 @@ export default function SignIn() {
           navigate("/home")
         }
       } catch (err) {
-        console.error("Failed to sync user with backend:", err)
+        console.error("Failed to sync user with Supabase:", err)
         navigate("/home")
       }
     }
