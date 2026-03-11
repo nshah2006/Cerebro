@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import { supabase } from "../lib/supabase"
 
 export default function SkillPickerModal({ gameRoute, onClose }) {
   const { user } = useAuth0()
@@ -18,10 +18,14 @@ export default function SkillPickerModal({ gameRoute, onClose }) {
     if (!user?.email) return
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/skills/profile?email=${encodeURIComponent(user.email)}`
-        )
-        setSkills(res.data.user?.selected_skills || [])
+        const { data, error: fetchError } = await supabase
+          .from('users')
+          .select('selected_skills')
+          .eq('email', user.email)
+          .single()
+        
+        if (fetchError) throw fetchError
+        setSkills(data?.selected_skills || [])
       } catch (err) {
         console.error("Failed to load skills:", err)
         setError("Couldn't load your topics. Please try again.")
@@ -36,10 +40,8 @@ export default function SkillPickerModal({ gameRoute, onClose }) {
     if (!selectedSkill) return
     setIsConfirming(true)
     try {
-      await axios.post("http://localhost:8000/skills/set-current-skill", {
-        email: user.email,
-        current_skill: selectedSkill,
-      })
+      // Store current skill in localStorage for game use (no need to persist to DB)
+      localStorage.setItem('currentSkill', selectedSkill)
       onClose()
       navigate(gameRoute)
     } catch (err) {

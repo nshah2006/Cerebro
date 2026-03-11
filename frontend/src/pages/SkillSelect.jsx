@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import { supabase } from "../lib/supabase"
 
 export default function SkillSelect() {
   const { user, logout, isAuthenticated, isLoading } = useAuth0()
@@ -72,10 +72,12 @@ export default function SkillSelect() {
     setErrorMsg("")
     setIsSaving(true)
     try {
-      await axios.post("http://localhost:8000/skills/update-skills", {
-        email: user.email,
-        selected_skills: selectedSkills,
-      })
+      const { error } = await supabase
+        .from('users')
+        .update({ selected_skills: selectedSkills })
+        .eq('email', user.email)
+      
+      if (error) throw error
       navigate("/home")
     } catch (err) {
       console.error("Failed to save skills:", err)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
-import axios from "axios"
+import { supabase } from "../lib/supabase"
 
 const ALL_CATEGORIES = [
   {
@@ -70,10 +70,14 @@ export default function ManageSkills() {
     if (!user?.email) return
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/skills/profile?email=${encodeURIComponent(user.email)}`
-        )
-        const current = res.data.user?.selected_skills || []
+        const { data, error } = await supabase
+          .from('users')
+          .select('selected_skills')
+          .eq('email', user.email)
+          .single()
+        
+        if (error) throw error
+        const current = data?.selected_skills || []
         setSelectedSkills(current)
         setOriginalSkills(current)
       } catch (err) {
@@ -103,10 +107,12 @@ export default function ManageSkills() {
     setErrorMsg("")
     setIsSaving(true)
     try {
-      await axios.post("http://localhost:8000/skills/update-skills", {
-        email: user.email,
-        selected_skills: selectedSkills
-      })
+      const { error } = await supabase
+        .from('users')
+        .update({ selected_skills: selectedSkills })
+        .eq('email', user.email)
+      
+      if (error) throw error
       setOriginalSkills([...selectedSkills])
       setSaveStatus("success")
     } catch (err) {

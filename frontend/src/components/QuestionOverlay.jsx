@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import axios from "axios";
+import { supabase } from "../lib/supabase";
 
 export default function QuestionOverlay({ isOpen, onAnswer }) {
   const { user } = useAuth0();
@@ -11,7 +11,23 @@ export default function QuestionOverlay({ isOpen, onAnswer }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch question from Gemini every time the overlay opens
+  // Sample questions for different topics (placeholder until AI is integrated)
+  const sampleQuestions = {
+    "Public Speaking": [
+      { question_text: "What is the 'rule of three' in public speaking?", options: ["Speaking three times", "Using three main points", "Taking three breaths", "Speaking for three minutes"], correct_answer: "Using three main points" },
+    ],
+    "Leadership": [
+      { question_text: "What leadership style involves making decisions without input from others?", options: ["Democratic", "Autocratic", "Laissez-faire", "Transformational"], correct_answer: "Autocratic" },
+    ],
+    "Cybersecurity Basics": [
+      { question_text: "What does 'phishing' refer to in cybersecurity?", options: ["A type of malware", "Fraudulent emails to steal info", "Network monitoring", "Data encryption"], correct_answer: "Fraudulent emails to steal info" },
+    ],
+    "default": [
+      { question_text: "What is the capital of France?", options: ["London", "Berlin", "Paris", "Madrid"], correct_answer: "Paris" },
+    ]
+  };
+
+  // Fetch question every time the overlay opens
   useEffect(() => {
     if (!isOpen || !user?.email) return;
 
@@ -23,11 +39,14 @@ export default function QuestionOverlay({ isOpen, onAnswer }) {
       setQuestion(null);
 
       try {
-        const res = await axios.get(
-          `http://localhost:8000/questions/generate?email=${encodeURIComponent(user.email)}`
-        );
-        setQuestion(res.data.question);
-        setTopic(res.data.topic || "Knowledge");
+        // Get current skill from localStorage
+        const currentSkill = localStorage.getItem('currentSkill') || 'default';
+        setTopic(currentSkill);
+        
+        // Use sample question for now
+        const questions = sampleQuestions[currentSkill] || sampleQuestions['default'];
+        const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+        setQuestion(randomQuestion);
       } catch (err) {
         console.error("Failed to fetch question:", err);
         setError("Couldn't load a question. Please try again.");
@@ -62,21 +81,7 @@ export default function QuestionOverlay({ isOpen, onAnswer }) {
     const correct = index === correctIndex;
     setIsCorrect(correct);
 
-    // Record in question history (fire and forget)
-    if (user?.email && question) {
-      try {
-        await axios.post(
-          `http://localhost:8000/questions/submit-answer?` +
-          `email=${encodeURIComponent(user.email)}` +
-          `&question=${encodeURIComponent(question.question_text ?? question.question ?? "")}` +
-          `&selected_answer=${encodeURIComponent(normalizedOptions[index])}` +
-          `&correct_answer=${encodeURIComponent(question.correct_answer)}` +
-          `&was_correct=${correct}`
-        );
-      } catch (err) {
-        console.error("Failed to submit answer:", err);
-      }
-    }
+    // For now, just proceed without recording (can add question_history table later)
 
     setTimeout(() => {
       onAnswer(correct);
