@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
+import { useAuth } from "../context/AuthContext"
 
 export default function SkillSelect() {
-  const { user, logout, isAuthenticated, isLoading } = useAuth0()
+  const { user, logout, isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
 
   const [selectedSkills, setSelectedSkills] = useState([])
@@ -96,7 +96,7 @@ export default function SkillSelect() {
             <div className="flex items-center gap-4">
               <span className="text-gray-700">Welcome, {user?.name}</span>
               <button
-                onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                onClick={() => { logout(); window.location.href = "/" }}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
               >
                 Log Out

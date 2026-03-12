@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
-import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
+import { useAuth } from "../context/AuthContext"
 
 const ALL_CATEGORIES = [
   {
@@ -55,7 +55,7 @@ const ALL_CATEGORIES = [
 ]
 
 export default function ManageSkills() {
-  const { user, isLoading } = useAuth0()
+  const { user, isLoading } = useAuth()
   const navigate = useNavigate()
 
   const [selectedSkills, setSelectedSkills] = useState([])

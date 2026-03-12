@@ -1,25 +1,27 @@
-import { useAuth0 } from "@auth0/auth0-react"
-import { useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
+import { useAuth } from "../context/AuthContext"
 import { useUser } from "../context/UserContext"
 
 export default function SignIn() {
-  const { loginWithRedirect, user, isAuthenticated, isLoading, error } = useAuth0()
+  const { signIn, signUp, isAuthenticated, isLoading, user } = useAuth()
   const navigate = useNavigate()
   const { setCurrentUser } = useUser()
 
-  // Debug logging
-  console.log("[v0] Auth0 state:", { isAuthenticated, isLoading, user, error })
-  console.log("[v0] Auth0 domain:", import.meta.env.VITE_AUTH0_DOMAIN)
-  console.log("[v0] Auth0 clientId:", import.meta.env.VITE_AUTH0_CLIENT_ID)
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isSignUp, setIsSignUp] = useState(false)
+  const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successMessage, setSuccessMessage] = useState("")
 
   useEffect(() => {
     if (!isAuthenticated || !user?.email) return
 
     const syncUser = async () => {
       try {
-        // Check if user exists in Supabase
+        // Check if user exists in Supabase users table
         const { data: existingUser, error: fetchError } = await supabase
           .from('users')
           .select('*')
@@ -34,7 +36,7 @@ export default function SignIn() {
             .from('users')
             .insert({
               email: user.email,
-              auth0_id: user.sub,
+              auth0_id: user.id,
               selected_skills: []
             })
             .select()
@@ -63,6 +65,31 @@ export default function SignIn() {
 
     syncUser()
   }, [isAuthenticated, user, navigate, setCurrentUser])
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError("")
+    setSuccessMessage("")
+    setIsSubmitting(true)
+
+    try {
+      if (isSignUp) {
+        const { error } = await signUp(email, password)
+        if (error) throw error
+        setSuccessMessage("Check your email to confirm your account!")
+        setEmail("")
+        setPassword("")
+      } else {
+        const { error } = await signIn(email, password)
+        if (error) throw error
+        // Auth state change will handle navigation
+      }
+    } catch (err) {
+      setError(err.message || "An error occurred")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   if (isLoading) return (
     <div className="flex items-center justify-center min-h-screen bg-[#FDFBF7]">
@@ -123,28 +150,72 @@ export default function SignIn() {
           Level up your mind. Master new skills while you play.
         </p>
 
-        {/* Auth Buttons */}
-        <div className="w-full space-y-4">
-          <button
-            onClick={() => {
-              console.log("[v0] Sign In clicked, calling loginWithRedirect...")
-              loginWithRedirect({ authorizationParams: { prompt: "login" } })
-                .then(() => console.log("[v0] loginWithRedirect resolved"))
-                .catch((err) => console.error("[v0] loginWithRedirect error:", err))
-            }}
-            className="w-full group overflow-hidden bg-white hover:bg-[#F3EFE6] text-[#4A5D4A] font-semibold py-4 px-6 rounded-xl border-2 border-[#E6E1D3] transition-all duration-300 flex justify-center items-center shadow-sm hover:shadow"
-          >
-            <span>Sign In</span>
-          </button>
+        {/* Error Message */}
+        {error && (
+          <div className="w-full mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm text-center">
+            {error}
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="w-full mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm text-center">
+            {successMessage}
+          </div>
+        )}
+
+        {/* Auth Form */}
+        <form onSubmit={handleSubmit} className="w-full space-y-4">
+          <div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-5 py-4 rounded-xl border-2 border-[#E6E1D3] bg-white/80 text-[#2C3E2C] placeholder-[#8B9D8B] focus:border-[#8B9D8B] focus:outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full px-5 py-4 rounded-xl border-2 border-[#E6E1D3] bg-white/80 text-[#2C3E2C] placeholder-[#8B9D8B] focus:border-[#8B9D8B] focus:outline-none transition-colors"
+            />
+          </div>
           
           <button
-            onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: "signup" } })}
-            className="w-full group overflow-hidden bg-[#8B9D8B] hover:bg-[#788978] text-[#FDFBF7] font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex justify-center items-center shadow-md hover:shadow-lg hover:shadow-[#8B9D8B]/30"
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full group overflow-hidden bg-[#8B9D8B] hover:bg-[#788978] text-[#FDFBF7] font-semibold py-4 px-6 rounded-xl transition-all duration-300 flex justify-center items-center shadow-md hover:shadow-lg hover:shadow-[#8B9D8B]/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="flex items-center gap-2">
-              Create Account
-              <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-            </span>
+            {isSubmitting ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span className="flex items-center gap-2">
+                {isSignUp ? "Create Account" : "Sign In"}
+                <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+              </span>
+            )}
+          </button>
+        </form>
+
+        {/* Toggle Sign In / Sign Up */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(!isSignUp)
+              setError("")
+              setSuccessMessage("")
+            }}
+            className="text-[#6A7B6A] hover:text-[#4A5D4A] font-medium transition-colors"
+          >
+            {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
           </button>
         </div>
         

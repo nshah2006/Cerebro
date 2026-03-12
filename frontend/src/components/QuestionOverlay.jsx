@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
 
 export default function QuestionOverlay({ isOpen, onAnswer }) {
-  const { user } = useAuth0();
+  const { user } = useAuth();
   const [question, setQuestion] = useState(null);
   const [topic, setTopic] = useState("");
   const [selectedOption, setSelectedOption] = useState(null);

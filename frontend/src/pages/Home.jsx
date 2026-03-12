@@ -1,10 +1,10 @@
 import { useState } from "react"
-import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
 import SkillPickerModal from "../components/SkillPickerModal"
+import { useAuth } from "../context/AuthContext"
 
 export default function Home() {
-  const { user, logout, isAuthenticated, isLoading } = useAuth0()
+  const { user, logout, isAuthenticated, isLoading } = useAuth()
   const navigate = useNavigate()
 
   const [showSkillPicker, setShowSkillPicker] = useState(false)
@@ -209,7 +209,7 @@ export default function Home() {
                 <span className="text-[#2C3E2C] font-semibold">{user?.name || user?.email}</span>
               </div>
               <button
-                onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
+                onClick={() => { logout(); window.location.href = "/" }}
                 className="bg-white hover:bg-[#F3EFE6] border border-[#E6E1D3] text-[#4A5D4A] font-semibold py-2 px-4 rounded-lg shadow-sm transition-all duration-200"
               >
                 Log Out

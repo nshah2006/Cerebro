@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react"
-import { useAuth0 } from "@auth0/auth0-react"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "../lib/supabase"
+import { useAuth } from "../context/AuthContext"
 
 export default function SkillPickerModal({ gameRoute, onClose }) {
-  const { user } = useAuth0()
+  const { user } = useAuth()
   const navigate = useNavigate()
 
   const [skills, setSkills] = useState([])
