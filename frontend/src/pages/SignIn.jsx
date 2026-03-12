@@ -5,9 +5,14 @@ import { supabase } from "../lib/supabase"
 import { useUser } from "../context/UserContext"
 
 export default function SignIn() {
-  const { loginWithRedirect, user, isAuthenticated, isLoading } = useAuth0()
+  const { loginWithRedirect, user, isAuthenticated, isLoading, error } = useAuth0()
   const navigate = useNavigate()
   const { setCurrentUser } = useUser()
+
+  // Debug logging
+  console.log("[v0] Auth0 state:", { isAuthenticated, isLoading, user, error })
+  console.log("[v0] Auth0 domain:", import.meta.env.VITE_AUTH0_DOMAIN)
+  console.log("[v0] Auth0 clientId:", import.meta.env.VITE_AUTH0_CLIENT_ID)
 
   useEffect(() => {
     if (!isAuthenticated || !user?.email) return
@@ -121,7 +126,12 @@ export default function SignIn() {
         {/* Auth Buttons */}
         <div className="w-full space-y-4">
           <button
-            onClick={() => loginWithRedirect({ authorizationParams: { prompt: "login" } })}
+            onClick={() => {
+              console.log("[v0] Sign In clicked, calling loginWithRedirect...")
+              loginWithRedirect({ authorizationParams: { prompt: "login" } })
+                .then(() => console.log("[v0] loginWithRedirect resolved"))
+                .catch((err) => console.error("[v0] loginWithRedirect error:", err))
+            }}
             className="w-full group overflow-hidden bg-white hover:bg-[#F3EFE6] text-[#4A5D4A] font-semibold py-4 px-6 rounded-xl border-2 border-[#E6E1D3] transition-all duration-300 flex justify-center items-center shadow-sm hover:shadow"
           >
             <span>Sign In</span>
